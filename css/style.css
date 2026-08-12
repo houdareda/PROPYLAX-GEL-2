@@ -364,10 +364,9 @@ font-size: 1.7vw;
 
 .doctor{
   position: relative;
-  background: url(../images/bg-doctor.webp);
-  background-size: cover;
-  background-position: center;
+  background: #ED5D37;
   text-align: center;
+  overflow: hidden;
 }
 .doctor .btm_doc{
     background: linear-gradient(to left,#E3553B,#EEAC4B);
@@ -386,6 +385,7 @@ font-size: 1.7vw;
   .doctor .top_doctor{
     background: linear-gradient(#F3BD4C,#EDA448);
     padding-bottom: 15px;
+    margin-top: -4vw;
   }
 
 .doctor h2{

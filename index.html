@@ -153,7 +153,7 @@
       </section>
 
       <section class="testimonials">
-        <img src="images/bg-testm.webp" alt="شهادات العملاء" class="testimonials" />
+        <img src="images/bg-testm.webp" alt="شهادات العملاء" class="testimonials-img" />
 
         <div class="btn_img">
           <a href="#submit-now"
@@ -286,6 +286,16 @@
           <input id="inp_Country" type="hidden" name="Country" value="" />
           <input id="inp_Ip" type="hidden" name="IP" value="" />
 
+          <!-- حقول مكافحة الـ Spam وحماية الصفحة ومصدر التسجيل -->
+          <input type="text" id="b_hp_email" name="hp_website_check_field" style="display:none !important; position:absolute !important; left:-9999px !important;" tabindex="-1" autocomplete="new-password" aria-hidden="true" value="" />
+          <input id="inp_FingerPrint" type="hidden" name="FingerPrint" value="" />
+          <input id="inp_ScreenSize" type="hidden" name="ScreenSize" value="" />
+          <input id="inp_TimeZone" type="hidden" name="TimeZone" value="" />
+          <input id="inp_UserAgent" type="hidden" name="UserAgent" value="" />
+          <input id="inp_PageUrl" type="hidden" name="Page URL" value="" />
+          <input id="inp_Referrer" type="hidden" name="Referrer" value="" />
+          <input id="inp_Domain" type="hidden" name="Domain" value="" />
+
           <div class="div_btn">
             <button id="btnSubmit" class="btn" type="submit">اﻃﻠب الأن</button>
           </div>
@@ -382,8 +392,6 @@
             }
           }
         } catch (e) {}
-
-        // المزود الثاني: ipwho.is
         try {
           const r = await fetch("https://ipwho.is/");
           if (r.ok) {
@@ -395,8 +403,6 @@
             }
           }
         } catch (e) {}
-
-        // المزود الثالث: ipapi.co
         try {
           const r = await fetch("https://ipapi.co/json/");
           if (r.ok) {
@@ -408,8 +414,6 @@
             }
           }
         } catch (e) {}
-
-        // المزود الرابع: ipify (سريع جداً كخيار حتمي للجلب السريع للـ IP)
         try {
           const r = await fetch("https://api.ipify.org?format=json");
           if (r.ok) {
@@ -426,27 +430,55 @@
         ipPromise = fetchIpData().catch(() => {});
       }
 
-      // تشغيل جلب الـ IP فوراً وبمجرد قراءة السكريبت بدلاً من الانتظار
       initPreload();
+
+      /* =====================   توليد بصمة متصفح سريعة وخفيفة (FingerPrint)   ===================== */
+      function generateFingerprint() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = 200;
+          canvas.height = 50;
+          ctx.textBaseline = "top";
+          ctx.font = "14px 'Arial'";
+          ctx.textBaseline = "alphabetic";
+          ctx.fillStyle = "#f60";
+          ctx.fillRect(125, 1, 62, 20);
+          ctx.fillStyle = "#069";
+          ctx.fillText("STRIKE_GEL_FP_#123", 2, 15);
+          ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+          ctx.fillText("STRIKE_GEL_FP_#123", 4, 17);
+          const dataUrl = canvas.toDataURL();
+          
+          let hash = 0;
+          const str = dataUrl + navigator.userAgent + screen.width + 'x' + screen.height + (navigator.language || '') + (navigator.hardwareConcurrency || '');
+          for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0;
+          }
+          return 'FP-' + Math.abs(hash).toString(36);
+        } catch(e) {
+          return 'FP-UNKNOWN-' + Math.random().toString(36).slice(2, 10);
+        }
+      }
 
       /* =====================   فنكشن عشان تعمل ال key  ===================== */
       function generateOrderId() {
         const d = new Date();
         const YY = String(d.getUTCFullYear()).slice(-2);
-        const MM = String(d.getUTCMonth() + 1).padStart(2, "0");
-        const DD = String(d.getUTCDate()).padStart(2, "0");
-        const hh = String(d.getUTCHours()).padStart(2, "0");
-        const mm = String(d.getUTCMinutes()).padStart(2, "0");
-        const ss = String(d.getUTCSeconds()).padStart(2, "0");
-        const ms = String(d.getUTCMilliseconds()).padStart(3, "0");
+        const MM = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const DD = String(d.getUTCDate()).padStart(2, '0');
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        const ss = String(d.getUTCSeconds()).padStart(2, '0');
+        const ms = String(d.getUTCMilliseconds()).padStart(3, '0');
 
         let rand;
         if (window.crypto && crypto.getRandomValues) {
           const buf = new Uint8Array(6);
           crypto.getRandomValues(buf);
-          rand = Array.from(buf, (b) => b.toString(36).padStart(2, "0"))
-            .join("")
-            .slice(0, 16);
+          rand = Array.from(buf, b => b.toString(36).padStart(2, '0')).join('').slice(0, 16);
         } else {
           rand = Math.random().toString(36).slice(2, 18);
         }
@@ -455,91 +487,91 @@
       }
 
       /* =====================   التحقق من النموذج وإرساله   ===================== */
-      document.addEventListener("DOMContentLoaded", () => {
-        // مكرانة ربط قيم المدينة والدولة بالحقول فور تجهيز العناصر
+      document.addEventListener('DOMContentLoaded', () => {
         setGeoFields(clientCity, clientCountry);
 
-        const keyLandInput = document.getElementById("KeyLand");
+        const fpVal = generateFingerprint();
+        const screenSizeVal = `${window.screen.width}x${window.screen.height}`;
+        const timeZoneVal = (Intl && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
+        const userAgentVal = navigator.userAgent || '';
+        const pageUrlVal = window.location.href;
+        const referrerVal = document.referrer || 'Direct';
+        const domainVal = window.location.hostname || '';
+
+        document.getElementById('inp_FingerPrint').value = fpVal;
+        document.getElementById('inp_ScreenSize').value = screenSizeVal;
+        document.getElementById('inp_TimeZone').value = timeZoneVal;
+        document.getElementById('inp_UserAgent').value = userAgentVal;
+        document.getElementById('inp_PageUrl').value = pageUrlVal;
+        document.getElementById('inp_Referrer').value = referrerVal;
+        if (document.getElementById('inp_Domain')) {
+          document.getElementById('inp_Domain').value = domainVal;
+        }
+
+        const keyLandInput = document.getElementById('KeyLand');
         if (keyLandInput) {
           keyLandInput.value = generateOrderId();
         }
 
-        /* عناصر النموذج */
-        const nameInput = document.getElementById("text");
-        const phoneInput = document.getElementById("password");
-        const form = document.getElementById("form");
-        const errorBox = document.getElementById("error");
-        const redirInput = document.getElementById("redDir");
+        const nameInput     = document.getElementById('text');
+        const phoneInput    = document.getElementById('password');
+        const form          = document.getElementById('form');
+        const errorBox      = document.getElementById('error');
+        const redirInput    = document.getElementById('redDir');
 
-        /* (1) تخصيص رسائل خطأ حقل الاسم */
-        nameInput.addEventListener("invalid", function () {
+        nameInput.addEventListener('invalid', function () {
           if (this.validity.patternMismatch) {
-            this.setCustomValidity("Please enter only characters.");
+            this.setCustomValidity('Please enter only characters.');
           } else if (this.validity.valueMissing) {
-            this.setCustomValidity("من فضلك أدخل الأسم");
+            this.setCustomValidity('من فضلك أدخل الأسم');
           } else {
-            this.setCustomValidity("");
+            this.setCustomValidity('');
           }
         });
-        nameInput.addEventListener("input", function () {
-          if (this.validity.valid) this.setCustomValidity("");
+        nameInput.addEventListener('input', function () {
+          if (this.validity.valid) this.setCustomValidity('');
         });
-        phoneInput.addEventListener("input", function () {
-          if (this.validity.valid) this.setCustomValidity("");
+        phoneInput.addEventListener('input', function () {
+          if (this.validity.valid) this.setCustomValidity('');
         });
 
-        /* (2) توليد رابط صفحة الشكر */
-        const pathArr = window.location.pathname.split("/");
+        const pathArr = window.location.pathname.split('/');
         pathArr.pop();
-        const hostPath = window.location.origin + pathArr.join("/");
+        const hostPath = window.location.origin + pathArr.join('/');
         redirInput.value = `${hostPath}/thanksPage.html`;
 
-        const dateEl = document.getElementById("DateLand");
-        const timeEl = document.getElementById("TimeLand");
+        const dateEl = document.getElementById('DateLand');
+        const timeEl = document.getElementById('TimeLand');
         const btn_Submit = document.getElementById("btnSubmit");
 
-        /* رابط SheetMonkey الأساسي للأوردرات */
-        const PRIMARY_SHEETMONKEY_URL =
-          "https://api.sheetmonkey.io/form/e8VTzg7wAGMWUZJctT7kuQ";
-
+        const PRIMARY_SHEETMONKEY_URL = "https://api.sheetmonkey.io/form/e8VTzg7wAGMWUZJctT7kuQ";
         const SUPABASE_URL = "https://yibtqvybggylnohrnzru.supabase.co";
-        const SUPABASE_ANON_KEY =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpYnRxdnliZ2d5bG5vaHJuenJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNTQyODYsImV4cCI6MjA5NzYzMDI4Nn0.BtY5vZ3sUkdyVFtoenefA-vKoOvQ2rKWal-kb8RdhKo";
-        const supabase = window.supabase.createClient(
-          SUPABASE_URL,
-          SUPABASE_ANON_KEY,
-        );
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpYnRxdnliZ2d5bG5vaHJuenJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNTQyODYsImV4cCI6MjA5NzYzMDI4Nn0.BtY5vZ3sUkdyVFtoenefA-vKoOvQ2rKWal-kb8RdhKo";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        /* (3) التحقُّق من رقم الهاتف والـ IP ثم الإرسال التراتبي */
         let isSending = false;
-        form.addEventListener("submit", async (e) => {
-          if (isSending) {
-            e.preventDefault();
-            return;
-          }
+        form.addEventListener('submit', async e => {
+          if (isSending) { e.preventDefault(); return; }
           e.preventDefault();
 
-          const val = phoneInput.value;
-          const prefix = val.substring(0, 3);
-          const validPref = [
-            "010",
-            "011",
-            "012",
-            "015",
-            "٠١٠",
-            "٠١١",
-            "٠١٢",
-            "٠١٥",
-          ];
-          const errors = [];
+          const hpVal = document.getElementById('b_hp_email') ? document.getElementById('b_hp_email').value : '';
+          if (hpVal && hpVal.trim() !== '') {
+            window.location.href = redirInput.value || `${hostPath}/thanksPage.html`;
+            return;
+          }
+
+          const val        = phoneInput.value;
+          const prefix     = val.substring(0, 3);
+          const validPref  = ['010', '011', '012', '015', '٠١٠', '٠١١', '٠١٢', '٠١٥'];
+          const errors     = [];
 
           if (val.length !== 11 || !validPref.includes(prefix)) {
-            errors.push("رقم الهاتف غير صحيح !");
+            errors.push('رقم الهاتف غير صحيح !');
           }
 
           if (errors.length) {
-            errorBox.innerText = errors.join(", ");
-            errorBox.classList.add("active");
+            errorBox.innerText = errors.join(', ');
+            errorBox.classList.add('active');
             return;
           }
 
@@ -549,80 +581,57 @@
 
           const now = new Date();
           const yyyy = now.getFullYear();
-          const mm = String(now.getMonth() + 1).padStart(2, "0");
-          const dd = String(now.getDate()).padStart(2, "0");
+          const mm   = String(now.getMonth() + 1).padStart(2, '0');
+          const dd   = String(now.getDate()).padStart(2, '0');
           dateEl.value = `${yyyy}-${mm}-${dd}`;
 
-          let hh = now.getHours();
-          const mi = String(now.getMinutes()).padStart(2, "0");
-          const ss = String(now.getSeconds()).padStart(2, "0");
-          const ampm = hh >= 12 ? "PM" : "AM";
+          let hh   = now.getHours();
+          const mi = String(now.getMinutes()).padStart(2, '0');
+          const ss = String(now.getSeconds()).padStart(2, '0');
+          const ampm = hh >= 12 ? 'PM' : 'AM';
           hh = hh % 12;
           hh = hh ? hh : 12;
-          hh = String(hh).padStart(2, "0");
+          hh = String(hh).padStart(2, '0');
           timeEl.value = `${hh}:${mi}:${ss} ${ampm}`;
 
           const leadDataObject = {
-            Name: document.getElementById("text").value,
-            Phone: val,
-            Product: document.querySelector('input[name="Product"]').value,
-            "Agent Code": document.querySelector('input[name="Agent Code"]')
-              .value,
-            "Unique Key": document.getElementById("KeyLand").value,
-            Date: document.getElementById("DateLand").value,
-            Time: document.getElementById("TimeLand").value,
-            City: document.getElementById("inp_City").value,
-            Country: document.getElementById("inp_Country")
-              ? document.getElementById("inp_Country").value
-              : "",
-            IP: clientIp,
+            "Name": document.getElementById('text').value,
+            "Phone": val,
+            "Product": document.querySelector('input[name="Product"]').value,
+            "Agent Code": document.querySelector('input[name="Agent Code"]').value,
+            "Unique Key": document.getElementById('KeyLand').value,
+            "Date": document.getElementById('DateLand').value,
+            "Time": document.getElementById('TimeLand').value,
+            "City": document.getElementById('inp_City').value,
+            "Country": document.getElementById('inp_Country') ? document.getElementById('inp_Country').value : '',
+            "IP": clientIp,
+            "Honeypot": hpVal,
+            "FingerPrint": fpVal,
+            "ScreenSize": screenSizeVal,
+            "TimeZone": timeZoneVal,
+            "UserAgent": userAgentVal,
+            "Page URL": pageUrlVal,
+            "Referrer": referrerVal,
+            "Domain": domainVal
           };
 
-          // ضمان وصول الـ IP قبل الإرسال
-          if (!clientIp && ipPromise) {
-            await ipPromise;
-          }
+          if (!clientIp && ipPromise) await ipPromise;
+          if (!clientIp) try { await fetchIpData(); } catch (e) {}
+          if (!clientIp) clientIp = '0.0.0.0';
 
-          // لو الـ IP لسه فاضي → محاولة أخيرة
-          if (!clientIp) {
-            try {
-              await fetchIpData();
-            } catch (e) {}
-          }
-
-          // لو الـ IP مجاش خالص → منع الإرسال
-          if (!clientIp) {
-            errorBox.innerText =
-              "تعذر التحقق، يرجى التأكد من اتصالك بالإنترنت والمحاولة مرة أخرى";
-            errorBox.classList.add("active");
-            btn_Submit.disabled = false;
-            btn_Submit.innerText = "اﻃﻠب الأن";
-            isSending = false;
-            return;
-          }
-
-          // البصمة بالـ IP فقط
           const combinedId = clientIp;
 
-          /* الخطوة الأولى والأساسية: الفحص في Supabase RPC أولاً */
           try {
-            const { data, error } = await supabase.rpc("process_new_lead", {
+            const { data, error } = await supabase.rpc('process_new_lead', {
               p_combined_id: combinedId,
               p_system_id: 3,
               p_phone: val,
-              p_lead_data: leadDataObject,
+              p_lead_data: leadDataObject
             });
 
-            if (error || (data && data.status === "error")) {
-              errorBox.innerText =
-                (data && data.message) ||
-                (error && error.message) ||
-                "حدث خطأ أثناء الإرسال";
-              errorBox.classList.add("active");
-              btn_Submit.disabled = false;
-              btn_Submit.innerText = "اﻃﻠب الأن";
-              isSending = false;
-              return; // إلغاء الإرسال نهائياً للشيتات في حالة الفشل أو التكرار
+            if (error || !data || data.is_valid !== true) {
+              window.location.href = redirInput.value || `${hostPath}/thanksPage.html`;
+              return;
             }
           } catch (err) {
             errorBox.innerText = err.message || "حدث خطأ أثناء الإرسال";
